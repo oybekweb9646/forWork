@@ -10,7 +10,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Main />} />
-        <Route path="/view" element={<View />} />
+        <Route path="/view/:id" element={<View />} />
       </Routes>
     </BrowserRouter>
   );

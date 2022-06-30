@@ -1,35 +1,61 @@
-import React, { useState } from 'react';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import { Pagination } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { setProduct } from '../../app/reducers/product';
+import routes from '../../app/routes';
 import Header from '../../components/header';
 import './main.css';
+import PaginationComponent from 'pagination-for-reactjs-component';
+import { Link } from 'react-router-dom';
 
-const Card = () => (
+const Card = ({ imgUrl, title, desc, id }) => (
   <div style={{ padding: '35px' }}>
     <div className="card" style={{ width: '18rem' }}>
-      <img src="..." class="card-img-top" alt="..." />
+      <img src={imgUrl} class="card-img-top img" alt="..." />
       <div className="card-body">
-        <h5 className="card-title">Card title</h5>
-        <p className="card-text">
-          Some quick example text to build on the card title and make up the bulk of the card's content.
-        </p>
-        <a href="#" className="btn btn-primary">
+        <h5 className="card-title">{title}</h5>
+        <p className="card-text">{desc}</p>
+        <Link to={`/view/${id}`} className="btn btn-primary">
           Go somewhere
-        </a>
+        </Link>
       </div>
     </div>
   </div>
 );
 
 const Main = () => {
-  const [state, setState] = useState({
-    data: [{}, {}, {}, {}],
-    limit: 10,
-    activePage: 1,
-  });
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageCount, setPageCount] = useState(6);
 
-  const handlePageChange = (number) => {
-    console.log(number);
-  };
+  const dispatch = useDispatch();
+
+  const products = useSelector((state) => state.product.products);
+
+  useEffect(() => {
+    axios
+      .get(routes.getProducts)
+      .then((res) => {
+        dispatch(setProduct(res.data));
+        setPageCount(products.count / 6);
+      })
+      .catch((error) => {
+        console.log(error + 'error');
+      });
+    setPageCount(products.count / 6 - 1);
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get(routes.getProductsWithFilter(`?offset=${6 * (pageIndex - 1)}&limit=${6 * pageIndex}`))
+      .then((res) => {
+        dispatch(setProduct(res.data));
+      })
+      .catch((error) => {
+        console.log(error + 'error');
+      });
+    console.log(pageIndex);
+  }, [pageIndex]);
 
   return (
     <div className="main">
@@ -38,26 +64,21 @@ const Main = () => {
           <div className="col-12">
             <Header />
           </div>
-          <div className="col-4">
-            <Card />
-          </div>
-          <div className="col-4">
-            <Card />
-          </div>
+          {products?.products?.map((product) => (
+            <Card
+              key={product.id}
+              imgUrl={product.thumbnail}
+              title={product.title}
+              desc={product.description}
+              id={product.id}
+            />
+          ))}
           <div className="col-12">
-            <Pagination className="px-4">
-              {state.data.map((_, index) => {
-                return (
-                  <Pagination.Item
-                    onClick={() => handlePageChange(index + 1)}
-                    key={index + 1}
-                    active={index + 1 === state.activePage}
-                  >
-                    {index + 1}
-                  </Pagination.Item>
-                );
-              })}
-            </Pagination>
+            <PaginationComponent
+              pageCount={pageCount > 0 ? pageCount : 5}
+              pageIndex={pageIndex}
+              setPageIndex={setPageIndex}
+            />
           </div>
         </div>
       </div>
